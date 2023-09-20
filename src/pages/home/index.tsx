@@ -1,16 +1,20 @@
-import { Box, Button, Card, Stack, TextField } from "@mui/material";
-import React from "react";
+import { Box, Button, Stack, TextField } from "@mui/material";
+import React, { useState } from "react";
 export default () => {
-  const history: Parameters<typeof HistoryBox>[0][] = [
-    {
-      sender: "AI",
-      msg: "I am AI",
-    },
-    {
-      sender: "Human",
-      msg: "I am Human",
-    },
-  ];
+  const [text, settext] = useState("");
+  const [msgs, setmsgs] = useState<Parameters<typeof HistoryBox>[0][]>([]);
+
+  const handleSubmit = async () => {
+    if (!text) return alert("No Text");
+    const res = await electron.chatgptApi.getCompletion(text);
+    console.log({ res });
+    setmsgs((prevState) => [
+      { msg: text, sender: "Human", time: new Date().toISOString() },
+      ...prevState,
+    ]);
+    settext("");
+  };
+
   return (
     <Box
       sx={{
@@ -20,24 +24,32 @@ export default () => {
         placeItems: "center",
       }}
     >
-      <Card sx={{ bgcolor: "rgba(255, 255, 255, 0.7)", p: "1rem" }}>
+      <Box
+        sx={{ bgcolor: "rgba(255, 255, 255, 0.7)", p: "1rem", width: "800px" }}
+      >
         <Box>
           <TextField
             multiline
-            minRows={4}
-            maxRows={4}
+            minRows={2}
+            maxRows={2}
             sx={{ borderColor: "white", display: "block", mb: "0.5rem" }}
             placeholder="Enter Your Question"
+            InputProps={{
+              value: text,
+              onChange(e) {
+                settext(e.target.value);
+              },
+            }}
           />
 
-          <Button variant="contained" size="small">
+          <Button variant="contained" size="small" onClick={handleSubmit}>
             Submit
           </Button>
-          {history.map((eachHis, id) => (
-            <HistoryBox key={id} {...eachHis} />
-          ))}
         </Box>
-      </Card>
+        {msgs.map((eachHis, id) => (
+          <HistoryBox key={id} {...eachHis} />
+        ))}
+      </Box>
     </Box>
   );
 };
@@ -48,6 +60,7 @@ const HistoryBox = ({
 }: {
   sender: "Human" | "AI";
   msg: string;
+  time: string;
 }) => {
   return (
     <Stack
